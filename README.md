@@ -1,2 +1,2 @@
 # yeeRent
-Meteor application for renting house
+meteor application for easy renting house
