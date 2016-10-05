@@ -3,22 +3,40 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <title>yeeRent</title>
-    <!-- <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
-    <script src="http://cache.amap.com/lbs/static/es5.min.js"></script>
-    <script src="http://webapi.amap.com/maps?v=1.3&key=5cbcb7e9143eb5fc99c4fb04ec91b99d&plugin=AMap.ArrivalRange,AMap.Scale,AMap.Geocoder,AMap.Transfer,AMap.Autocomplete"></script>
-    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script> -->
+    <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <!-- <script src="http://cache.amap.com/lbs/static/es5.min.js"></script> -->
+    <!-- <link rel="stylesheet" href="http://cache.amap.com/lbs/static/jquery.range.css"/> -->
+    <!-- <script src="http://cache.amap.com/lbs/static/jquery-1.9.1.js"></script> -->
+    <!-- <script src="http://cache.amap.com/lbs/static/jquery.range.js"></script> -->
 </head>
 
 <body>
-  <h1>Welcome to Meteor!</h1>
 
-  <!-- {{> gaodeMap}} -->
-
-  {{> test}}
-
+  {{> mapApp}}
 
 </body>
 
-<template name="test">
-  <h1>{{amapKey}}</h1>
+<template name="mapApp">
+  <div class="mapContainer">
+    {{> gaodeMap}}
+  </div>
+
+  <div id="tip" class="button-group">
+    点:
+    X:<input type="text" name="x" id='lngX' value="116.39742"/>
+    Y:<input type="text" name="y" id='latY' value="39.909325"/>
+    <br>
+    时间：<span>{{time}}</span>分钟
+    <div id="single-slider"></div>
+    <br>
+    交通类型:
+    <select name="v" id="v">
+        <option value ="SUBWAY,BUS">地铁+公交</option>
+        <option value ="SUBWAY">地铁</option>
+        <option value ="BUS">公交</option>
+    </select>
+    <input type="button" class="button" value="生活圈" onClick="javascript:addPolygon()"/>
+    <input type="button" class="button" value="清空" onClick="javascript:delPolygon()"/>
+  </div>
+
 </template>

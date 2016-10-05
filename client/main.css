@@ -1,1 +1,13 @@
 /* CSS declarations go here */
+div#tip {
+    top: auto;
+    bottom: 25px;
+}
+input{
+   width: 120px;
+}
+
+.mapContainer {
+  width: 100%;
+  height: 100%;
+}
