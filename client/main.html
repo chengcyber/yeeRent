@@ -22,21 +22,26 @@
   </div>
 
   <div id="tip" class="button-group">
-    点:
+    <div class="ctrl-entry">
+      <label>地址：</label><input type="text" class="input-addr" name="addr" id="addr" placeholder="请在此输入地点"/>
+    </div>
+    <!-- <br/> -->
+    <!-- 点:
     X:<input type="text" name="x" id='lngX' value="116.39742"/>
-    Y:<input type="text" name="y" id='latY' value="39.909325"/>
-    <br>
+    Y:<input type="text" name="y" id='latY' value="39.909325"/> -->
+    <!-- <br> -->
     时间：<span>{{time}}</span>分钟
     <div id="single-slider"></div>
     <br>
     交通类型:
-    <select name="v" id="v">
+    <select name="policySelect" id="policySelect" class="js-changePolicySelect">
         <option value ="SUBWAY,BUS">地铁+公交</option>
         <option value ="SUBWAY">地铁</option>
         <option value ="BUS">公交</option>
     </select>
-    <input type="button" class="button" value="生活圈" onClick="javascript:addPolygon()"/>
-    <input type="button" class="button" value="清空" onClick="javascript:delPolygon()"/>
+    <input type="button" class="button js-showArrivalRange" value="生活圈"/>
+    <input type="button" class="button js-clearArrivalRange" value="清空"/>
+    <button class="btn-control js-toggleHouses">房源</button>
   </div>
 
 </template>

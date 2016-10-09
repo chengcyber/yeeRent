@@ -52,6 +52,9 @@ AmapAPI = {
     self.map.plugin(["AMap.ToolBar"], function() {
       self.map.addControl(new AMap.ToolBar());
     });
+    self.map.plugin(["AMap.Scale"], function() {
+      self.map.addControl(new AMap.Scale());
+    });
     // self.map.on('click', function(){console.log('hello')});
   },
 
