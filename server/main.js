@@ -8,3 +8,10 @@ Meteor.startup(() => {
 Meteor.defer(()=> {
 
 })
+
+/**
+ * PUBLISH
+ */
+Meteor.publish("houses", function(){
+  return HouseColl.find({});
+});

@@ -43,3 +43,11 @@ div#tip {
   margin-bottom: 4px;
   cursor: pointer;
 }
+
+.btn-show {
+  display: inline;
+}
+
+.btn-hide {
+  display:none;
+}

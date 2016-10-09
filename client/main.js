@@ -23,7 +23,18 @@ var centerMarker,
 Session.setDefault('isChanged',false);
 Session.setDefault('slider', 30);
 Session.setDefault('policy', 'BUS,SUBWAY');
+Session.setDefault('housesLoaded', false);
 
+/**
+ * SUBSCRIBE
+ */
+Meteor.subscribe("houses", function() {
+  Session.set('housesLoaded', true);
+});
+
+/**
+ * startup
+ */
 Meteor.startup(() => {
   console.log('startup:call amap load');
   AmapAPI.load({
@@ -35,13 +46,15 @@ Meteor.startup(() => {
  * helpers
  */
 Template.mapApp.helpers({
-  time: function() {return Session.get('slider');}
+  time: function() {return Session.get('slider');},
+  btn_status: function() {
+    return (Session.get('housesLoaded'))?'btn-show':'btn-hide';
+  }
 });
 
 /**
  * Render
  */
-
 Template.mapApp.onRendered(function() {
   var self = this;
   self.autorun(function(c) {
@@ -315,6 +328,17 @@ function clearArrivalRange(){
   //        }
   // },1000)
 
+function showHouseMarkersCluster() {
+  // var houses = Houses_sh.find({}, {
+  //   limit : 10
+  // }).fetch();
+  var houses = HouseColl.findOne();
+  console.log(houses);
+}
+
+function clearHouseMarkersCluster() {
+
+}
 
 /**
  * EVENT
@@ -335,5 +359,8 @@ Template.mapApp.events({
   'change .js-changePolicySelect': function(e){
     Session.set('policy', $(e.target).find('option:selected').attr('value'));
     // console.log(Session.get('policy'));
+  },
+  'click .js-toggleHouses': function(e) {
+    showHouseMarkersCluster();
   }
 });
