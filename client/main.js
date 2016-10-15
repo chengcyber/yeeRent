@@ -8,14 +8,19 @@ import './main.html';
  */
 var centerMarker,
     geoCoder,
+    mapContextMenu,
     citySearch,
-    currentCity,
+    currentCity = 'shanghai',
     auto,
     placeSearch,
     poiMarkers = [],
     arrivalRange,
     polygon,
-    houseMarkers = [];
+    wherePositions = {},
+    cnt_geoCoder = 0,
+    totalGeoCoder = 0,
+    houseMarkers = [],
+    houseMarkerCluster;
 
 /**
  * Sessions
@@ -24,12 +29,31 @@ Session.setDefault('isChanged',false);
 Session.setDefault('slider', 30);
 Session.setDefault('policy', 'BUS,SUBWAY');
 Session.setDefault('housesLoaded', false);
+Session.setDefault('wherePositionsPrepared', false);
+// Session.setDefault('totalHouseNum', 0);
 
 /**
  * SUBSCRIBE
  */
-Meteor.subscribe("houses", function() {
+
+Meteor.subscribe('houses', {
+  limit: 30
+}, function() {
   Session.set('housesLoaded', true);
+  console.log('subscribe callback');
+  // get all where
+  var allWhere = _.uniq(HouseColl.find({},{fields: {where: 1}}).fetch().
+    map(function(item){
+      return item.where;
+    }));
+  // console.log(allWhere);
+  geoCoder.setCity(currentCity);
+  totalGeoCoder = allWhere.length;
+  Session.set('wherePositionsPrepared', false);
+  allWhere.forEach(function(item) {
+    getAddrPosition(item);
+  });
+
 });
 
 /**
@@ -50,6 +74,7 @@ Template.mapApp.helpers({
   btn_status: function() {
     return (Session.get('housesLoaded'))?'btn-show':'btn-hide';
   }
+  // btn_status: 'btn-show'
 });
 
 /**
@@ -62,8 +87,10 @@ Template.mapApp.onRendered(function() {
 
       initAutoComplete();
       initCitySearch();
+      initGeoCoder();
       initSilder();
       initContextMenu();
+      initMarkerCluster();
 
       c.stop();
     }
@@ -185,26 +212,16 @@ function unbindPoiMarkers() {
   })
 }
 
+
 /**
- * ADDR -> lnglat
- * @param  {[string]} addr
- * @return {[lnglat]} lnglat
+ * initialize geocoder
  */
-function markAddrPosition(addr) {
+function initGeoCoder() {
   // create geoCoder
   geoCoder = new AMap.Geocoder({
     city: currentCity,
   });
   console.log('geoCoder created');
-
-  console.log(addr);
-  geoCoder.getLocation(addr, function(status, result) {
-    if (status === 'complete' && result.info === 'OK') {
-      console.log(result.geocodes);
-    } else {
-      console.log('getLocation failed');
-    }
-  })
 }
 
 /**
@@ -214,7 +231,7 @@ function initContextMenu() {
   /*
    * create contextmenu
    */
-  var mapContextMenu = new AMap.ContextMenu();
+  mapContextMenu = new AMap.ContextMenu();
   mapContextMenu.addItem('设置标记', function(e){
     unbindPoiMarkers();
     addCenterMarker(mapContextMenuPositon);
@@ -250,6 +267,15 @@ function initSilder() {
 }
 
 /**
+ * [initMarkerCluster description]
+ */
+function initMarkerCluster() {
+  AmapAPI.map.plugin(["AMap.MarkerClusterer"], function() {
+      houseMarkerCluster = new AMap.MarkerClusterer(AmapAPI.map);
+  });
+}
+
+/**
  * add Center Marker
  * @param position new AMap.LngLat(116.39,39.9) or [116.39,39.9]
  */
@@ -267,7 +293,7 @@ function clearCenterMarker(){
   // clear placesearch result
   placeSearch.clear();
   // clear map
-  AmapAPI.map.clearMap();
+  AmapAPI.map.remove(poiMarkers);
 
   //clear the only centerMarker
   if(centerMarker){
@@ -329,11 +355,39 @@ function clearArrivalRange(){
   // },1000)
 
 function showHouseMarkersCluster() {
-  // var houses = Houses_sh.find({}, {
-  //   limit : 10
-  // }).fetch();
-  var houses = HouseColl.findOne();
-  console.log(houses);
+  var houses = HouseColl.find().fetch();
+  houseMarkerCluster.removeMarkers(houseMarkers);
+  houseMarkers = [];
+  var whereMarked = {};
+  houses.forEach(function(item, index, arr) {
+    var where = item.where;
+    var extDataObj = {
+      title: item.title,
+      link: item.link,
+      rooms: item.rooms,
+      area: item.area,
+      price: item.price
+    }
+    if (!whereMarked.hasOwnProperty(where)) {
+      var hsMarker = new AMap.Marker({
+        map: AmapAPI.map,
+        title: where,
+        extData: [
+          extDataObj
+        ],
+        position: wherePositions[where]
+      });
+      whereMarked[where] = houseMarkers.length;
+      houseMarkers.push(hsMarker);
+      houseMarkerCluster.addMarker(hsMarker);
+    } else {
+      houseMarkers[whereMarked[where]].getExtData().push(extDataObj); // shallow copy of extData
+
+    }
+  });
+  // console.log(houses);
+  // console.log(houseMarkers);
+  // houseMarkerCluster.addMarkers(houseMarkers);
 }
 
 function clearHouseMarkersCluster() {
@@ -341,26 +395,54 @@ function clearHouseMarkersCluster() {
 }
 
 /**
+ * ADDR -> lnglat
+ * @param  {[string]} addr
+ * @return {[lnglat]} lnglat
+ */
+function getAddrPosition(addr) {
+  // console.log(addr);
+  geoCoder.getLocation(addr, function(stat, res) {
+    cnt_geoCoder++;
+    if (stat === 'complete' && res.info === 'OK') {
+      if (res.geocodes) {
+        // console.log(res.geocodes);
+        wherePositions[addr] = res.geocodes[0].location;
+      }
+    } else {
+      console.log('getLocation failed. ', addr);
+    }
+    if (cnt_geoCoder === totalGeoCoder) {
+      console.log('all wherePositions OK');
+      Session.set('wherePositionsPrepared', true);
+      // console.log(wherePositions);
+    }
+  });
+}
+
+/**
  * EVENT
  */
 Template.mapApp.events({
   'click .js-setCenterMarker': function(e) {
+    e.preventDefault();
     unbindPoiMarkers();
     addCenterMarker(Session.get('curPosition'));
   },
   'click .js-showArrivalRange': function(e) {
+    e.preventDefault();
     showArrivalRange();
-    e.preventDefault()
+
   },
   'click .js-clearArrivalRange': function(e) {
-    clearArrivalRange();
     e.preventDefault();
+    clearArrivalRange();
   },
   'change .js-changePolicySelect': function(e){
     Session.set('policy', $(e.target).find('option:selected').attr('value'));
     // console.log(Session.get('policy'));
   },
   'click .js-toggleHouses': function(e) {
+    e.preventDefault();
     showHouseMarkersCluster();
   }
 });
