@@ -4,6 +4,11 @@
 import './main.html';
 
 /**
+ * DEBUG
+ */
+const DEBUG = true;
+
+/**
  * Declarations
  */
 var centerMarker,
@@ -32,17 +37,20 @@ Session.setDefault('slider', 30);
 Session.setDefault('policy', 'BUS,SUBWAY');
 Session.setDefault('housesLoaded', false);
 Session.setDefault('wherePositionsPrepared', false);
-// Session.setDefault('totalHouseNum', 0);
+Session.setDefault('statusNow', '初始化...');
 
 /**
  * SUBSCRIBE
  */
 
 Meteor.subscribe('houses', {
-  limit: 30
+  limit: 3000
 }, function() {
   Session.set('housesLoaded', true);
-  console.log('subscribe callback');
+  if (DEBUG) {
+    console.log('subscribe callback');
+  }
+  statusNow('加载房源数据完毕');
   // get all where
   var allWhere = _.uniq(HouseColl.find({},{fields: {where: 1}}).fetch().
     map(function(item){
@@ -62,9 +70,12 @@ Meteor.subscribe('houses', {
  * startup
  */
 Meteor.startup(() => {
-  console.log('startup:call amap load');
+  if (DEBUG) {
+    console.log('startup:call amap load');
+  }
+  statusNow('加载地图API...');
   AmapAPI.load({
-    plugin: 'AMap.ArrivalRange,AMap.Autocomplete,AMap.Geocoder,AMap.CitySearch,AMap.PlaceSearch',
+    plugin: 'AMap.Autocomplete,AMap.PlaceSearch,AMap.CitySearch,AMap.Geocoder,AMap.ArrivalRange',
   });
 });
 
@@ -74,9 +85,11 @@ Meteor.startup(() => {
 Template.mapApp.helpers({
   time: function() {return Session.get('slider');},
   btn_status: function() {
-    return (Session.get('housesLoaded'))?'btn-show':'btn-hide';
+    return (Session.get('housesLoaded') && Session.get('wherePositionsPrepared'))?'btn-show':'btn-hide';
+  },
+  statusNow: function() {
+    return Session.get('statusNow');
   }
-  // btn_status: 'btn-show'
 });
 
 /**
@@ -86,6 +99,7 @@ Template.mapApp.onRendered(function() {
   var self = this;
   self.autorun(function(c) {
     if (AmapAPI.loaded()) {
+      statusNow('加载地图API完成');
 
       initAutoComplete();
       initCitySearch();
@@ -105,18 +119,27 @@ Template.mapApp.onRendered(function() {
  */
 function initCitySearch() {
   citySearch = new AMap.CitySearch();
-  console.log('citySearch created');
+  if (DEBUG) {
+    console.log('citySearch created');
+  }
   citySearch.getLocalCity(function(stat, res) {
     if (stat === 'complete' && res.info === 'OK') {
       if (res && res.city) {
         currentCity = res.city;
         auto.setCity(currentCity);
         placeSearch.setCity(currentCity);
-        console.log('city search successful');
+        if (geoCoder) {
+          geoCoder.setCity(currentCity);
+        }
+        if (DEBUG) {
+          console.log('city search successful');
+        }
       }
     } else {
-      console.log('city search failed');
-      console.log(res.info);
+      if (DEBUG) {
+        console.log('city search failed');
+        console.log(res.info);
+      }
     }
 
     // initAutoComplete();
@@ -145,9 +168,11 @@ function initAutoComplete() {
     placeSearch.search(e.poi.name, function(stat, res, poiList) {
       if (stat === 'complete' && res.info === 'OK') {
         // search call back
-        console.log('placeSearch successful');
+        if (DEBUG) {
+          console.log('placeSearch successful');
+        }
         if (res.poiList) {
-          console.log(res.poiList);
+          // console.log(res.poiList);
           var pois = res.poiList.pois;
           pois.forEach(function(item, index, arr) {
             // console.log(item);
@@ -175,7 +200,9 @@ function initAutoComplete() {
         }
       } else {
         // search failed.
-        console.log('placeSearch failed');
+        if (DEBUG) {
+          console.log('placeSearch failed');
+        }
       }
     });
   });
@@ -223,7 +250,9 @@ function initGeoCoder() {
   geoCoder = new AMap.Geocoder({
     city: currentCity,
   });
-  console.log('geoCoder created');
+  if (DEBUG) {
+    console.log('geoCoder created');
+  }
 }
 
 /**
@@ -261,7 +290,6 @@ function initSilder() {
   }).on('slide', function (ev, val) {
   // set real values on 'slide' event
     Session.set('slider', Math.round(val));
-    // console.log(Math.round(Session.get('slider')));
   }).on('change', function (ev, val) {
     // round off values on 'change' event
     // Session.set('slider', [Math.round(val[0]), Math.round(val[1])]);
@@ -288,21 +316,16 @@ function initTransfer() {
       } else {
         policy = AMap.TransferPolicy.LEAST_TIME;
       }
-      // var transferObj = {
-      //   map: AmapAPI.map,
-      //   city: currentCity,
-      //   policy: policy,
-      //   panel: 'transferResultPanel'
-      // }
-      // console.log(transferObj);
       routeTransfer = new AMap.Transfer({
         map: AmapAPI.map,
         city: currentCity,
         policy: policy,
         panel: 'transferResultPanel'
       });
-      console.log(routeTransfer);
-      console.log('routeTransfer created');
+      if (DEBUG) {
+        // console.log(routeTransfer);
+        console.log('routeTransfer created');
+      }
   });
 }
 
@@ -336,16 +359,23 @@ function clearCenterMarker(){
 function showArrivalRange() {
 
   arrivalRange = new AMap.ArrivalRange();
-  console.log(centerMarker);
-  console.log(Session.get('slider'));
-  console.log(Session.get('policy'));
+  if (DEBUG) {
+    console.log(centerMarker);
+    console.log(Session.get('slider'));
+    console.log(Session.get('policy'));
+  }
   if (!centerMarker) {
-    console.log('NO marker now');
+    if (DEBUG) {
+      console.log('NO marker now');
+    }
+    statusNow('未设置标记,请重试.');
     return;
   }
   arrivalRange.search(centerMarker.getPosition(), Session.get('slider'), function(stat, res) {
     if (stat === 'complete' && res.info === 'OK') {
-      console.log('arrivalRange successful');
+      if (DEBUG) {
+        console.log('arrivalRange successful');
+      }
       clearArrivalRange();
       if (res.bounds) {
         var polygonArr = _.flatten(res.bounds, true);
@@ -361,9 +391,11 @@ function showArrivalRange() {
         AmapAPI.map.setFitView();
       }
     } else {
-      console.log('arrivalRange failed');
-      console.log(stat);
-      console.log(res.info);
+      if (DEBUG) {
+        console.log('arrivalRange failed');
+        console.log(stat);
+        console.log(res.info);
+      }
     }
   }, {
     policy: Session.get('policy')
@@ -391,6 +423,7 @@ function showHouseMarkersCluster() {
   var whereMarked = {};
   houses.forEach(function(item, index, arr) {
     var where = item.where;
+    if (!wherePositions[where]) return;
     var extDataObj = {
       title: item.title,
       link: item.link,
@@ -418,9 +451,6 @@ function showHouseMarkersCluster() {
       houseMarkers[whereMarked[where]].getExtData().push(extDataObj); // shallow copy of extData
     }
   });
-  // console.log(houses);
-  // console.log(houseMarkers);
-  // houseMarkerCluster.addMarkers(houseMarkers);
 }
 
 /**
@@ -491,14 +521,23 @@ function getAddrPosition(addr) {
         wherePositions[addr] = res.geocodes[0].location;
       }
     } else {
-      console.log('getLocation failed. ', addr);
+      if (DEBUG) {
+        console.log('getLocation failed. ', addr);
+      }
     }
     if (cnt_geoCoder === totalGeoCoder) {
-      console.log('all wherePositions OK');
+      if (DEBUG) {
+        console.log('all wherePositions OK');
+      }
+      statusNow('查询位置信息完成.')
       Session.set('wherePositionsPrepared', true);
       // console.log(wherePositions);
     }
   });
+}
+
+function statusNow(str) {
+  Session.set('statusNow', str);
 }
 
 /**
@@ -533,13 +572,16 @@ Template.mapApp.events({
   },
   'click .js-displayHouseMarkers': function(e) {
     e.preventDefault();
+    statusNow('加载所有房源信息中...');
     showHouseMarkersCluster();
+    statusNow('加载所有房源信息完成');
     // ready for transferSearch after display houses
     initTransfer();
   },
   'click .js-clearHouseMarkers': function(e) {
     e.preventDefault();
     routeTransfer.clear();
+    statusNow('');
   },
   'click .js-transferSearch': function(e) {
     e.preventDefault();
@@ -549,16 +591,25 @@ Template.mapApp.events({
     }
     if(!centerMarker) {
       // lack terminal center marker`
-      console.log('Search failed: lack of info');
+      if (DEBUG) {
+        console.log('Search failed: lack of info');
+      }
+      statusNow('未设置标记,请重试.')
     } else {
       var curPosition = Session.get('curPosition');
       routeTransfer.search([curPosition.lng, curPosition.lat], centerMarker.getPosition(), function(stat, res) {
         if (stat === 'complete' && res.info === 'OK') {
-          console.log('Search complete');
+          if (DEBUG) {
+            console.log('Search complete');
+          }
+          statusNow('查询路线成功');
         } else {
-          console.log('Search failed');
-          console.log('stat ', stat);
-          console.log('res ', res);
+          if (DEBUG) {
+            console.log('Search failed');
+            console.log('stat ', stat);
+            console.log('res ', res);
+          }
+          statusNow('查询路线失败');
         }
       });
 

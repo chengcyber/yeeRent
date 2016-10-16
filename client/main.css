@@ -45,11 +45,13 @@ div#tip {
 }
 
 .btn-show {
-  display: inline;
+  /*display: inline;*/
+  visibility : visible;
 }
 
 .btn-hide {
-  display:none;
+  /*display:none;*/
+  visibility: hidden;
 }
 
 .transferResultPanel {
