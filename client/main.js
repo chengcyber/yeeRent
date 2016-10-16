@@ -15,7 +15,7 @@ var centerMarker,
     geoCoder,
     mapContextMenu,
     citySearch,
-    currentCity = 'shanghai',
+    currentCity = '上海市',
     auto,
     placeSearch,
     poiMarkers = [],
@@ -24,6 +24,7 @@ var centerMarker,
     wherePositions = {},
     cnt_geoCoder = 0,
     totalGeoCoder = 0,
+    houseInfoWin,
     houseMarkers = [],
     houseMarkerCluster,
     houseMarkerListners = [],
@@ -44,7 +45,8 @@ Session.setDefault('statusNow', '初始化...');
  */
 
 Meteor.subscribe('houses', {
-  limit: 3000
+  // skip: 9000,
+  // limit: 3000
 }, function() {
   Session.set('housesLoaded', true);
   if (DEBUG) {
@@ -60,6 +62,7 @@ Meteor.subscribe('houses', {
   geoCoder.setCity(currentCity);
   totalGeoCoder = allWhere.length;
   Session.set('wherePositionsPrepared', false);
+  statusNow('查询位置信息中...请耐心等待');
   allWhere.forEach(function(item) {
     getAddrPosition(item);
   });
@@ -337,6 +340,7 @@ function addCenterMarker(position){
   clearCenterMarker();
   centerMarker= new AMap.Marker({
     map: AmapAPI.map,
+    icon: 'http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
     animation: 'AMAP_ANIMATION_DROP',
     position: position
   });
@@ -436,6 +440,7 @@ function showHouseMarkersCluster() {
       var hsMarker = new AMap.Marker({
         map: AmapAPI.map,
         title: where,
+        topWhenMouseOver: true,
         extData: [
           extDataObj
         ],
@@ -459,7 +464,7 @@ function showHouseMarkersCluster() {
  */
 function _markerHouseInfoWindow(e){
   // create info window
-  var infoWin = new AMap.InfoWindow({
+  houseInfoWin = new AMap.InfoWindow({
     offset: new AMap.Pixel(0, -30)
   });
   // handle content
@@ -488,11 +493,11 @@ function _markerHouseInfoWindow(e){
 
   // add button for mark
   contentArr.push('<button class="btn-transferSearch js-transferSearch">路线查询</button>');
-  infoWin.setContent(contentArr.join(''));
-  // infoWin.setContent(contentArr.join('<br/>'));
+  houseInfoWin.setContent(contentArr.join(''));
+  // houseInfoWin.setContent(contentArr.join('<br/>'));
   var position = e.target.getPosition();
   Session.set('curPosition', position);
-  infoWin.open(AmapAPI.map, position);
+  houseInfoWin.open(AmapAPI.map, position);
 }
 
 function clearHouseMarkersCluster() {
@@ -516,7 +521,7 @@ function getAddrPosition(addr) {
   geoCoder.getLocation(addr, function(stat, res) {
     cnt_geoCoder++;
     if (stat === 'complete' && res.info === 'OK') {
-      if (res.geocodes) {
+      if (res.geocodes.length >= 1) {
         // console.log(res.geocodes);
         wherePositions[addr] = res.geocodes[0].location;
       }
@@ -578,7 +583,7 @@ Template.mapApp.events({
     // ready for transferSearch after display houses
     initTransfer();
   },
-  'click .js-clearHouseMarkers': function(e) {
+  'click .js-clearRouteTransfer': function(e) {
     e.preventDefault();
     routeTransfer.clear();
     statusNow('');
@@ -589,6 +594,11 @@ Template.mapApp.events({
     if (routeTransfer) {
       routeTransfer.clear();
     }
+    // close houseInfoWin
+    if (houseInfoWin) {
+      houseInfoWin.close();
+    }
+
     if(!centerMarker) {
       // lack terminal center marker`
       if (DEBUG) {
