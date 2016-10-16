@@ -4,6 +4,8 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <title>yeeRent</title>
     <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <!-- <link rel="stylesheet" href="http://cache.amap.com/lbs/static/AMap.TransferRender1120.css"/>
+    <script type="text/javascript" src="http://cache.amap.com/lbs/static/TransferRender1230.js"></script> -->
     <!-- <script src="http://cache.amap.com/lbs/static/es5.min.js"></script> -->
     <!-- <link rel="stylesheet" href="http://cache.amap.com/lbs/static/jquery.range.css"/> -->
     <!-- <script src="http://cache.amap.com/lbs/static/jquery-1.9.1.js"></script> -->
@@ -21,6 +23,7 @@
     {{> gaodeMap}}
   </div>
 
+  <div id="transferResultPanel" class="transferResultPanel"></div>
   <div id="tip" class="button-group">
     <div class="ctrl-entry">
       <label>地址：</label><input type="text" class="input-addr" name="addr" id="addr" placeholder="请在此输入地点"/>
@@ -41,7 +44,9 @@
     </select>
     <input type="button" class="button js-showArrivalRange" value="生活圈"/>
     <input type="button" class="button js-clearArrivalRange" value="清空"/>
-    <button class="btn-control {{btn_status}} js-toggleHouses">房源</button>
+    <button class="btn-control {{btn_status}} js-displayHouseMarkers">显示房源</button>
+    <button class="btn-control {{btn_status}} js-clearHouseMarkers">清空显示</button>
+    <div id="statusBar" class="statusBar"></div>
   </div>
 
 </template>

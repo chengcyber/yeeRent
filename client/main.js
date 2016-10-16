@@ -21,7 +21,8 @@ var centerMarker,
     totalGeoCoder = 0,
     houseMarkers = [],
     houseMarkerCluster,
-    houseMarkerListners = [];
+    houseMarkerListners = [],
+    routeTransfer;
 
 /**
  * Sessions
@@ -201,7 +202,7 @@ function _markerInfoWindow(e){
   infoWin.setContent(contentArr.join('<br/>'));
   var position = e.target.getPosition();
   infoWin.open(AmapAPI.map, position);
-  Session.set('curPosition', position);
+  Session.set('centerMarkerPosition', position);
 }
 /**
  * unbindPoiMarkers if mark is done, unbind all event to pois, prepare for clear them
@@ -273,6 +274,35 @@ function initSilder() {
 function initMarkerCluster() {
   AmapAPI.map.plugin(["AMap.MarkerClusterer"], function() {
       houseMarkerCluster = new AMap.MarkerClusterer(AmapAPI.map);
+  });
+}
+
+/**
+ * [initTransfer description]
+ */
+function initTransfer() {
+  AmapAPI.map.plugin(["AMap.Transfer"], function() {
+      var policy,curPolicy = Session.get('policy');
+      if (curPolicy && curPolicy.search(/SUBWAY/i) < 0) {
+        policy = AMap.TransferPolicy.NO_SUBWAY;
+      } else {
+        policy = AMap.TransferPolicy.LEAST_TIME;
+      }
+      // var transferObj = {
+      //   map: AmapAPI.map,
+      //   city: currentCity,
+      //   policy: policy,
+      //   panel: 'transferResultPanel'
+      // }
+      // console.log(transferObj);
+      routeTransfer = new AMap.Transfer({
+        map: AmapAPI.map,
+        city: currentCity,
+        policy: policy,
+        panel: 'transferResultPanel'
+      });
+      console.log(routeTransfer);
+      console.log('routeTransfer created');
   });
 }
 
@@ -427,12 +457,12 @@ function _markerHouseInfoWindow(e){
   });
 
   // add button for mark
-  contentArr.push('<button class="">TO-DO</button>');
+  contentArr.push('<button class="btn-transferSearch js-transferSearch">路线查询</button>');
   infoWin.setContent(contentArr.join(''));
   // infoWin.setContent(contentArr.join('<br/>'));
   var position = e.target.getPosition();
+  Session.set('curPosition', position);
   infoWin.open(AmapAPI.map, position);
-  // Session.set('curPosition', position);
 }
 
 function clearHouseMarkersCluster() {
@@ -478,23 +508,60 @@ Template.mapApp.events({
   'click .js-setCenterMarker': function(e) {
     e.preventDefault();
     unbindPoiMarkers();
-    addCenterMarker(Session.get('curPosition'));
+    addCenterMarker(Session.get('centerMarkerPosition'));
   },
   'click .js-showArrivalRange': function(e) {
     e.preventDefault();
+    clearArrivalRange();
     showArrivalRange();
-
   },
   'click .js-clearArrivalRange': function(e) {
     e.preventDefault();
     clearArrivalRange();
   },
   'change .js-changePolicySelect': function(e){
-    Session.set('policy', $(e.target).find('option:selected').attr('value'));
+    var curPolicy = $(e.target).find('option:selected').attr('value')
+    Session.set('policy', curPolicy);
+    if(routeTransfer) {
+      if (curPolicy.search(/SUBWAY/i) < 0) {
+        routeTransfer.setPolicy(AMap.TransferPolicy.NO_SUBWAY);
+      } else {
+        routeTransfer.setPolicy(AMap.TransferPolicy.LEAST_TIME);
+      }
+    }
     // console.log(Session.get('policy'));
   },
-  'click .js-toggleHouses': function(e) {
+  'click .js-displayHouseMarkers': function(e) {
     e.preventDefault();
     showHouseMarkersCluster();
+    // ready for transferSearch after display houses
+    initTransfer();
+  },
+  'click .js-clearHouseMarkers': function(e) {
+    e.preventDefault();
+    routeTransfer.clear();
+  },
+  'click .js-transferSearch': function(e) {
+    e.preventDefault();
+    // clear current search result
+    if (routeTransfer) {
+      routeTransfer.clear();
+    }
+    if(!centerMarker) {
+      // lack terminal center marker`
+      console.log('Search failed: lack of info');
+    } else {
+      var curPosition = Session.get('curPosition');
+      routeTransfer.search([curPosition.lng, curPosition.lat], centerMarker.getPosition(), function(stat, res) {
+        if (stat === 'complete' && res.info === 'OK') {
+          console.log('Search complete');
+        } else {
+          console.log('Search failed');
+          console.log('stat ', stat);
+          console.log('res ', res);
+        }
+      });
+
+    }
   }
 });
