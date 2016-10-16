@@ -20,7 +20,8 @@ var centerMarker,
     cnt_geoCoder = 0,
     totalGeoCoder = 0,
     houseMarkers = [],
-    houseMarkerCluster;
+    houseMarkerCluster,
+    houseMarkerListners = [];
 
 /**
  * Sessions
@@ -202,12 +203,12 @@ function _markerInfoWindow(e){
   infoWin.open(AmapAPI.map, position);
   Session.set('curPosition', position);
 }
-
 /**
  * unbindPoiMarkers if mark is done, unbind all event to pois, prepare for clear them
  */
 function unbindPoiMarkers() {
   poiMarkers.forEach(function(item, index, arr) {
+    // TO-DO according to the doc, maybe useless
     AMap.event.removeListener(item, 'click', _markerInfoWindow);
   })
 }
@@ -356,8 +357,7 @@ function clearArrivalRange(){
 
 function showHouseMarkersCluster() {
   var houses = HouseColl.find().fetch();
-  houseMarkerCluster.removeMarkers(houseMarkers);
-  houseMarkers = [];
+  clearHouseMarkersCluster();
   var whereMarked = {};
   houses.forEach(function(item, index, arr) {
     var where = item.where;
@@ -368,6 +368,7 @@ function showHouseMarkersCluster() {
       area: item.area,
       price: item.price
     }
+    // check houseMarker of somewhere
     if (!whereMarked.hasOwnProperty(where)) {
       var hsMarker = new AMap.Marker({
         map: AmapAPI.map,
@@ -377,12 +378,14 @@ function showHouseMarkersCluster() {
         ],
         position: wherePositions[where]
       });
+      // store the index of each houseMarker
       whereMarked[where] = houseMarkers.length;
       houseMarkers.push(hsMarker);
       houseMarkerCluster.addMarker(hsMarker);
+      //unbind events
+      houseMarkerListners.push(AMap.event.addListener(hsMarker, 'click', _markerHouseInfoWindow));
     } else {
       houseMarkers[whereMarked[where]].getExtData().push(extDataObj); // shallow copy of extData
-
     }
   });
   // console.log(houses);
@@ -390,8 +393,57 @@ function showHouseMarkersCluster() {
   // houseMarkerCluster.addMarkers(houseMarkers);
 }
 
-function clearHouseMarkersCluster() {
+/**
+ * show info window when click poimarkers
+ * @param  {[Object]} e [event]
+ */
+function _markerHouseInfoWindow(e){
+  // create info window
+  var infoWin = new AMap.InfoWindow({
+    offset: new AMap.Pixel(0, -30)
+  });
+  // handle content
+  var extDataObj = e.target.getExtData();
+  var contentArr = [];
+  extDataObj.forEach(function(item) {
+    _.map(item, function(value, key) {
+      var contentHtml = '';
+      switch (key) {
+        case 'title' :
+          contentHtml = '<div class="info-title">' + value + '</div>'; break;
+        case 'link' :
+          contentHtml = '<div><a target="_blank" href="' + value + '" >去看房</a></div>'; break;
+        case 'rooms' :
+          contentHtml = '<div>房型: ' + value + '</div>'; break;
+        case 'area' :
+          contentHtml = '<div>面积: ' + value + '</div>'; break;
+        case 'price' :
+          contentHtml = '<div>价格: ' + value + '</div>'; break;
+        default :
+          contentHtml = 'default'; break;
+      }
+      contentArr.push(contentHtml);
+    });
+  });
 
+  // add button for mark
+  contentArr.push('<button class="">TO-DO</button>');
+  infoWin.setContent(contentArr.join(''));
+  // infoWin.setContent(contentArr.join('<br/>'));
+  var position = e.target.getPosition();
+  infoWin.open(AmapAPI.map, position);
+  // Session.set('curPosition', position);
+}
+
+function clearHouseMarkersCluster() {
+  // clear markers
+  houseMarkerCluster.removeMarkers(houseMarkers);
+  houseMarkers = [];
+  //unbind events
+  houseMarkerListners.forEach(function(item) {
+    AMap.event.removeListener(item);
+  });
+  houseMarkerListners = [];
 }
 
 /**
