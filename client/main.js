@@ -4,6 +4,11 @@
 import './main.html';
 
 /**
+ * FlowRouter-BlazeLayout
+ */
+BlazeLayout.setRoot('body');
+
+/**
  * DEBUG
  */
 const DEBUG = true;
@@ -53,6 +58,8 @@ Meteor.subscribe('houses', {
     console.log('subscribe callback');
   }
   statusNow('加载房源数据完毕');
+
+/*
   // get all where
   var allWhere = _.uniq(HouseColl.find({},{fields: {where: 1}}).fetch().
     map(function(item){
@@ -66,20 +73,14 @@ Meteor.subscribe('houses', {
   allWhere.forEach(function(item) {
     getAddrPosition(item);
   });
-
+*/
 });
 
 /**
  * startup
  */
 Meteor.startup(() => {
-  if (DEBUG) {
-    console.log('startup:call amap load');
-  }
-  statusNow('加载地图API...');
-  AmapAPI.load({
-    plugin: 'AMap.Autocomplete,AMap.PlaceSearch,AMap.CitySearch,AMap.Geocoder,AMap.ArrivalRange',
-  });
+
 });
 
 /**
@@ -104,12 +105,12 @@ Template.mapApp.onRendered(function() {
     if (AmapAPI.loaded()) {
       statusNow('加载地图API完成');
 
-      initAutoComplete();
-      initCitySearch();
-      initGeoCoder();
-      initSilder();
-      initContextMenu();
-      initMarkerCluster();
+      // initAutoComplete();
+      // initCitySearch();
+      // initGeoCoder();
+      // initSilder();
+      // initContextMenu();
+      // initMarkerCluster();
 
       c.stop();
     }
@@ -544,6 +545,7 @@ function getAddrPosition(addr) {
 function statusNow(str) {
   Session.set('statusNow', str);
 }
+
 
 /**
  * EVENT

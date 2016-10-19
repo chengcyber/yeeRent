@@ -14,9 +14,25 @@
 
 <body>
 
-  {{> mapApp}}
-
+  <!-- {{> mapApp}} -->
+  {{> LayoutTemplate}}
 </body>
+
+<template name="LayoutTemplate">
+  {{> Template.dynamic template=top}}
+  {{> Template.dynamic template=center}}
+</template>
+
+<template name="navBar">
+  <div>
+    <a href="/">Home</a>
+    <a href="/rent">Rent</a>
+  </div>
+</template>
+
+<template name="homePage">
+  <h1> Home Page</h1>
+</template>
 
 <template name="mapApp">
   <div class="mapContainer">
@@ -48,5 +64,4 @@
     <button class="btn-control {{btn_status}} js-clearRouteTransfer">清空导航</button>
     <div id="statusBar" class="statusBar">{{statusNow}}</div>
   </div>
-
 </template>

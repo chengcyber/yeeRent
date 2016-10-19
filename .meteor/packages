@@ -19,3 +19,5 @@ ecmascript@0.5.8_1              # Enable ECMAScript2015+ syntax in app code
 rcy:nouislider
 session@1.1.6
 shell-server
+kadira:flow-router
+kadira:blaze-layout

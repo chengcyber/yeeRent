@@ -12,10 +12,11 @@ AmapAPI = {
     options = _.extend({v : 1.3, key: setting}, options);
     var params = _.map(options, function(value, key) {return key + '=' + value;}).join('&');
     var script = document.createElement('script');
-    // script.type = 'text/javascript';
+    script.type = 'text/javascript';
     script.src = 'http://webapi.amap.com/maps?' + params + '&callback=initialize';
     document.body.appendChild(script);
     console.log('script appended');
+
   }),
 
   _loaded: new ReactiveVar(false),
@@ -34,7 +35,6 @@ AmapAPI = {
       script.src = path;
       document.body.appendChild(script);
     });
-    // this.create();
   },
 
   utilityLibraries: [],
@@ -55,7 +55,6 @@ AmapAPI = {
     self.map.plugin(["AMap.Scale"], function() {
       self.map.addControl(new AMap.Scale());
     });
-    // self.map.on('click', function(){console.log('hello')});
   },
 
   map:{}
@@ -64,6 +63,23 @@ AmapAPI = {
 
 Template.gaodeMap.onRendered(function() {
   var self = this;
+
+  /* start to load AMap */
+  // if (DEBUG) {
+    console.log('*** start load AMap ***');
+  // }
+  // statusNow('加载地图API...');
+  AmapAPI.load({
+    plugin: 'AMap.Autocomplete,AMap.PlaceSearch,AMap.CitySearch,AMap.Geocoder,AMap.ArrivalRange',
+  });
+
+  /* initialize callback */
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.text = 'function initialize(){AmapAPI.initialize();}';
+  document.body.appendChild(script);
+
+  // wait for loaded
   self.autorun(function(c) {
     console.log('gaode wait for loaded');
     if (AmapAPI.loaded()) {
@@ -72,4 +88,13 @@ Template.gaodeMap.onRendered(function() {
       c.stop();
     }
   });
+});
+
+Template.gaodeMap.onDestroyed(function() {
+  var map = AmapAPI.map;
+  if (typeof map != undefined) {
+    map.clearInfoWindow();
+    map.clearMap();
+    map.destroy();
+  }
 });
