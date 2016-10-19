@@ -19,14 +19,24 @@
 </body>
 
 <template name="LayoutTemplate">
-  {{> Template.dynamic template=top}}
+  <div class="container">
+    {{> Template.dynamic template=top}}
+  </div>
   {{> Template.dynamic template=center}}
 </template>
 
 <template name="navBar">
-  <div>
-    <a href="/">Home</a>
-    <a href="/rent">Rent</a>
+  <div class="navbar-header">
+    <button class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main_navbar">
+    <span class="glyphicon glyphicon-th-list"></span>
+    </button>
+  </div>
+
+  <div class="collapse navbar-collapse" id="main_navbar">
+    <ul class="nav navbar-nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="/rent">Rent</a></li>
+    </ul>
   </div>
 </template>
 

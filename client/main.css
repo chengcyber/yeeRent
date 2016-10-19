@@ -15,6 +15,10 @@ div#tip {
   height: 100%;
 }
 
+.button-group {
+  margin-top: 40px;
+}
+
 .ctrl-entry {
   /*width: 100%;*/
   /*overflow: auto;*/

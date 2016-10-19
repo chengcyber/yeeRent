@@ -1,5 +1,5 @@
 // import { ReactiveVar } from 'meteor/reactive-var';
-
+// import {Tracker} from 'meteor/tracker'
 
 import './main.html';
 
@@ -59,21 +59,10 @@ Meteor.subscribe('houses', {
   }
   statusNow('加载房源数据完毕');
 
-/*
-  // get all where
-  var allWhere = _.uniq(HouseColl.find({},{fields: {where: 1}}).fetch().
-    map(function(item){
-      return item.where;
-    }));
-  // console.log(allWhere);
-  geoCoder.setCity(currentCity);
-  totalGeoCoder = allWhere.length;
-  Session.set('wherePositionsPrepared', false);
-  statusNow('查询位置信息中...请耐心等待');
-  allWhere.forEach(function(item) {
-    getAddrPosition(item);
-  });
-*/
+  if (AmapAPI.loaded()) {
+    getAllwhere();
+  }
+
 });
 
 /**
@@ -105,12 +94,14 @@ Template.mapApp.onRendered(function() {
     if (AmapAPI.loaded()) {
       statusNow('加载地图API完成');
 
-      // initAutoComplete();
-      // initCitySearch();
+      initSilder();
+
+      initCitySearch();
+      initAutoComplete();
       // initGeoCoder();
-      // initSilder();
-      // initContextMenu();
-      // initMarkerCluster();
+      initContextMenu();
+      initMarkerCluster();
+
 
       c.stop();
     }
@@ -129,12 +120,13 @@ function initCitySearch() {
   citySearch.getLocalCity(function(stat, res) {
     if (stat === 'complete' && res.info === 'OK') {
       if (res && res.city) {
+        console.log('citySearch result: ', res.city);
         currentCity = res.city;
         auto.setCity(currentCity);
         placeSearch.setCity(currentCity);
-        if (geoCoder) {
-          geoCoder.setCity(currentCity);
-        }
+        // if (geoCoder) {
+        //   geoCoder.setCity(currentCity);
+        // }
         if (DEBUG) {
           console.log('city search successful');
         }
@@ -146,7 +138,11 @@ function initCitySearch() {
       }
     }
 
-    // initAutoComplete();
+    // citysearch callback -> get wherePositions
+    if (Session.equals('housesLoaded', true)) {
+      getAllwhere();
+    }
+
   });
 }
 
@@ -167,6 +163,9 @@ function initAutoComplete() {
   /* bind to select */
   AMap.event.addListener(auto, "select", function(e) {
     clearCenterMarker();
+    if (routeTransfer) {
+      routeTransfer.clear();
+    }
     // markAddrPosition(e.poi.name);
     placeSearch.setCity(currentCity);
     placeSearch.search(e.poi.name, function(stat, res, poiList) {
@@ -510,6 +509,32 @@ function clearHouseMarkersCluster() {
     AMap.event.removeListener(item);
   });
   houseMarkerListners = [];
+}
+
+/**
+ * After houes loaded, get all where position by AMap geocoder
+ * @return {[type]} [description]
+ */
+function getAllwhere() {
+  if (!Session.get('housesLoaded')) return;
+  if (!AmapAPI.loaded) return;
+
+  // init geoCoder
+  initGeoCoder();
+
+  // get all where
+  var allWhere = _.uniq(HouseColl.find({},{fields: {where: 1}}).fetch().
+    map(function(item){
+      return item.where;
+    }));
+  // console.log(allWhere);
+  // geoCoder.setCity(currentCity);
+  totalGeoCoder = allWhere.length;
+  Session.set('wherePositionsPrepared', false);
+  statusNow('查询位置信息中...请耐心等待');
+  allWhere.forEach(function(item) {
+    getAddrPosition(item);
+  });
 }
 
 /**
