@@ -59,13 +59,18 @@ div#tip {
 }
 
 .transferResultPanel {
-    z-index: 999;
-    position: absolute;
-    background-color: white;
-    max-height: 80%;
-    overflow-y: auto;
-    top: 10px;
-    left: 10px;
-    width: 280px;
-    /*border: solid 1px silver;*/
+  margin-top: 40px;
+  z-index: 999;
+  position: absolute;
+  background-color: white;
+  max-height: 80%;
+  overflow-y: auto;
+  top: 10px;
+  left: 10px;
+  width: 280px;
+  /*border: solid 1px silver;*/
+}
+
+.img-demo {
+  width: 100%;
 }

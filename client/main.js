@@ -183,6 +183,7 @@ function initAutoComplete() {
             var poiMarker = new AMap.Marker({
               map : AmapAPI.map,
               title: item.name,
+              icon: 'http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
               extData: {
                 '名称': item.name,
                 '地址': item.address,
@@ -578,7 +579,7 @@ function statusNow(str) {
 Template.mapApp.events({
   'click .js-setCenterMarker': function(e) {
     e.preventDefault();
-    unbindPoiMarkers();
+    // unbindPoiMarkers();
     addCenterMarker(Session.get('centerMarkerPosition'));
   },
   'click .js-showArrivalRange': function(e) {
@@ -634,7 +635,10 @@ Template.mapApp.events({
       statusNow('未设置标记,请重试.')
     } else {
       var curPosition = Session.get('curPosition');
-      routeTransfer.search([curPosition.lng, curPosition.lat], centerMarker.getPosition(), function(stat, res) {
+      var centerPosition = centerMarker.getPosition();
+      console.log(curPosition);
+      console.log(centerMarker.getPosition());
+      routeTransfer.search([curPosition.lng, curPosition.lat], [centerPosition.lng, centerPosition.lat], function(stat, res) {
         if (stat === 'complete' && res.info === 'OK') {
           if (DEBUG) {
             console.log('Search complete');
